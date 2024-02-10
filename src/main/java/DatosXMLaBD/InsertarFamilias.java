@@ -1,52 +1,60 @@
 package DatosXMLaBD;
 
+import conexiones.ConexionMySQL;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.File;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 public class InsertarFamilias {
 
-    public static void insertarFamilies() {
+    public static void insertar() {
         try {
-            // Cargar el archivo XML
-            File file = new File("target/familiasFinal.xml");
-            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-            Document doc = dBuilder.parse(file);
-            doc.getDocumentElement().normalize();
+            // Crear la conexión a la base de datos MySQL
+            Connection con = ConexionMySQL.conectar("FP24MJO");
 
-            // Obtener la lista de familias
-            NodeList nList = doc.getElementsByTagName("familia_profesional");
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Path p = Path.of("target/familiasFinal.xml");
+            Document document = builder.parse(p.toFile());
 
-            for (int temp = 0; temp < nList.getLength(); temp++) {
-                Node nNode = nList.item(temp);
+            NodeList nodeList = document.getElementsByTagName("familia");
 
-                if (nNode.getNodeType() == Node.ELEMENT_NODE) {
-                    Element eElement = (Element) nNode;
+            // Creación de los objetos de la entidad EntityEntity
+            for (int i = 0; i < nodeList.getLength(); i++) {
+                Element element = (Element) nodeList.item(i);
 
-                    // Obtener los datos de la familia
-                    String nombreFamilia = eElement.getElementsByTagName("nombre").item(0).getTextContent();
+                int codigo = Integer.parseInt(element.getElementsByTagName("codigo").item(0).getAttributes().getNamedItem("value").getTextContent());
+                String nombre = element.getElementsByTagName("nombre").item(0).getTextContent();
 
-                    // Crear la consulta de inserción
-                    String query = "INSERT INTO FAMILY (FamilyName) VALUES (?)";
-
-                    // Preparar y ejecutar la consulta
-                /*try (PreparedStatement pstmt = con.prepareStatement(query)) {
-                    pstmt.setString(1, nombreFamilia);
+                // Usar la conexión a la base de datos MySQL
+                try {
+                    String query = "INSERT INTO FAMILY (FamilyCode, FamilyName) VALUES (?, ?)";
+                    PreparedStatement pstmt = con.prepareStatement(query);
+                    pstmt.setInt(1, codigo);
+                    pstmt.setString(2, nombre);
                     pstmt.executeUpdate();
-                }*/
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    System.out.println("Error en la operación de la base de datos");
                 }
             }
-        } catch (Exception e) {
+
+            // Cerrar la conexión a la base de datos
+            con.close();
+
+        } catch (ParserConfigurationException | IOException | SAXException | SQLException e) {
             e.printStackTrace();
+            System.out.println("Error en la operación de la base de datos");
         }
     }
-
 }
-
-

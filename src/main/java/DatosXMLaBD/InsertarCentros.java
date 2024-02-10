@@ -1,10 +1,6 @@
 package DatosXMLaBD;
 
-import entities.EntityEntity;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
-import org.hibernate.cfg.Configuration;
+import conexiones.ConexionMySQL;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -15,47 +11,53 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 public class InsertarCentros {
 
-    public static void insertCentro() {
-        try {
-            // Crear la SessionFactory utilizando la configuración en persistence.xml
-            SessionFactory sessionFactory = new Configuration().configure("persistence.xml").buildSessionFactory();
 
+    public static void insertar() {
+        PreparedStatement ps;
+        ResultSet rs;
+
+        // Parseo del archivo XML
+        try (Connection con = ConexionMySQL.conectar("FP24MJO")){
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
             Path p = Path.of("target/centrosFinal.xml");
             Document document = builder.parse(p.toFile());
+            document.getDocumentElement().normalize();
 
+            // Obtención de la lista de nodos <entidad>
             NodeList nodeList = document.getElementsByTagName("entidad");
 
-            // Creación de los objetos de la entidad ENTITY
+            // Creación de los objetos de la entidad EntityEntity
             for (int i = 0; i < nodeList.getLength(); i++) {
                 Element element = (Element) nodeList.item(i);
-                EntityEntity entidad = new EntityEntity();
 
-                entidad.setEntityName(element.getElementsByTagName("nombre").item(0).getTextContent());
-                entidad.setEntityCode(element.getElementsByTagName("codigo").item(0).getTextContent());
-                entidad.setEmail(element.getElementsByTagName("email").item(0).getTextContent());
+                // Setear valores en el objeto EntityEntity
+                String codigo = element.getElementsByTagName("codigo").item(0).getTextContent().isEmpty() ? String.valueOf(-(i + 1)) : element.getElementsByTagName("codigo").item(0).getTextContent();
+                String nombre = element.getElementsByTagName("nombre").item(0).getTextContent();
+                String web = element.getElementsByTagName("web").item(0).getTextContent();
+                String correo = element.getElementsByTagName("correoElectronico").item(0).getTextContent();
 
-                // Usar la SessionFactory de Hibernate
-                try (Session session = sessionFactory.openSession()) {
-                    Transaction transaction = session.beginTransaction();
-                    session.save(entidad);
-                    transaction.commit();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    System.out.println("Error en la operación de la base de datos");
-                }
+                // Insertar en la base de datos
+                ps = con.prepareStatement("INSERT IGNORE INTO ENTITY (EntityName, EntityCode, Web, Email) VALUES (?, ?, ?, ?)");
+                ps.setString(1, nombre);
+                ps.setString(2, codigo);
+                ps.setString(3, web);
+                ps.setString(4, correo);
+                ps.executeUpdate();
             }
-
-            // Cerrar la SessionFactory
-            sessionFactory.close();
-
         } catch (ParserConfigurationException | IOException | SAXException e) {
-            e.printStackTrace();
-            System.out.println("Error en la operación de la base de datos");
+            System.err.println("Error: " + e.getMessage());
+            throw new RuntimeException(e);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
+
 }

@@ -4,6 +4,9 @@ import ConsultasXQuery.ConsultaCentros;
 import ConsultasXQuery.ConsultaFamilias;
 import ConsultasXQuery.ConsultaProyectos;
 import DatosXMLaBD.InsertarCentros;
+import DatosXMLaBD.InsertarFamilias;
+import DatosXMLaBD.InsertarProyectos;
+import ManejoDB.CreacionTablas;
 import XML_a_ExistDB.SubirArchivosExistDB;
 import libs.Leer;
 import org.xmldb.api.base.Collection;
@@ -15,36 +18,43 @@ public class Main {
         boolean salir = false;
         int opcion;
 
-        // Variable para almacenar la conexión a la base de datos
-        Collection col = null;
-
         do {
             System.out.println("1. Leer proyectos desde CSV y guardar en XML");
             System.out.println("2. Subir archivos XML a la base de datos eXist");
-            System.out.println("3. Consultas eXist-DB y creación de archivos XML");
-            System.out.println("4. Insertar datos de XML a BD");
+            System.out.println("3. Consultas eXistDB y creación de archivos XML");
+            System.out.println("4. Exportar datos XQuery a XML");
+            System.out.println("5. Insertar datos de XML a BD");
             System.out.println("0. Salir");
 
             opcion = Leer.pedirEntero("Introduce una opción: ");
 
             switch (opcion) {
                 case 1:
-                    // Leer proyectos desde CSV y guardar en XML
+                    //creación de las tablas
+                    CreacionTablas.crear();
+                    System.out.println("Tablas creadas");
+                    break;
+                case 2:
+                    //leer proyectos desde CSV y guardar en XML
                     LeerCSV_Centros.leerCentros();
                     LeerCSV_Proyectos.leerProyectos();
                     break;
-                case 2:
-                    // Subir archivos XML a la base de datos eXist
-                    col = SubirArchivosExistDB.subirArchivos();
-                    break;
                 case 3:
-                    // Consultas eXist-DB y creación de archivos XML
-                    ConsultaFamilias.listarFamilias();
-                    ConsultaCentros.consultaExist();
-                    ConsultaProyectos.listarProyectos();
+                    //subir archivos XML a la base de datos eXist
+                    SubirArchivosExistDB.subirArchivos();
                     break;
                 case 4:
-                    InsertarCentros.insertCentro();
+                    //consultas eXistDB y creación de archivos XML
+                    ConsultaCentros.listarCentros();
+                    ConsultaProyectos.listarProyectos();
+                    ConsultaFamilias.listarFamilias();
+                    break;
+                case 5:
+                    //insertar los datos a las tablas
+                    InsertarCentros.insertar();
+                    InsertarFamilias.insertar();
+                    InsertarProyectos.insertar();
+                    break;
                 case 0:
                     System.out.println("Salir");
                     salir = true;
@@ -54,15 +64,5 @@ public class Main {
             }
 
         } while (!salir);
-
-        // Cerrar la conexión después de salir del bucle
-        if (col != null) {
-            try {
-                col.close();
-                System.out.println("Cerrada la conexión");
-            } catch (XMLDBException e) {
-                System.out.println("Error al cerrar la conexión");
-            }
-        }
     }
 }

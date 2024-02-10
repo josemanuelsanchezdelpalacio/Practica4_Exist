@@ -1,6 +1,6 @@
 package XML_a_ExistDB;
 
-import conexion.ConexionExistDB;
+import conexiones.ConexionExistDB;
 import libs.Leer;
 import org.xmldb.api.base.Collection;
 import org.xmldb.api.base.Resource;
@@ -10,7 +10,7 @@ import java.io.File;
 
 public class SubirArchivosExistDB {
 
-    public static Collection subirArchivos() {
+    public static void subirArchivos() {
         Collection col = null;
         try {
             col = ConexionExistDB.conexionExistDb();
@@ -59,6 +59,5 @@ public class SubirArchivosExistDB {
                 }
             }
         }
-        return col;
     }
 }
