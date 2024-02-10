@@ -50,7 +50,7 @@ public class InsertarProyectos {
 
                 // Usar la conexión a la base de datos MySQL
                 try {
-                    String query = "INSERT INTO PROJECT (Title, State, InitDate, EndDate) VALUES (?, ?, ?, ?)";
+                    String query = "INSERT IGNORE INTO PROJECT (Title, State, InitDate, EndDate) VALUES (?, ?, ?, ?)";
                     PreparedStatement pstmt = con.prepareStatement(query);
                     pstmt.setString(1, titulo);
                     pstmt.setString(2, estado);
@@ -81,7 +81,7 @@ public class InsertarProyectos {
                     System.out.println("Error en la operación de la base de datos");
                 }
             }
-
+            System.out.println("Datos de PROJECT subidos");
             // Cerrar la conexión a la base de datos
             con.close();
 

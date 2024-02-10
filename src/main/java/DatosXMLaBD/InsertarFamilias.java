@@ -33,14 +33,13 @@ public class InsertarFamilias {
             for (int i = 0; i < nodeList.getLength(); i++) {
                 Element element = (Element) nodeList.item(i);
 
-                int codigo = Integer.parseInt(element.getElementsByTagName("codigo").item(0).getAttributes().getNamedItem("value").getTextContent());
+                String codigo = element.getElementsByTagName("codigo").item(0).getTextContent();
                 String nombre = element.getElementsByTagName("nombre").item(0).getTextContent();
 
-                // Usar la conexión a la base de datos MySQL
                 try {
-                    String query = "INSERT INTO FAMILY (FamilyCode, FamilyName) VALUES (?, ?)";
+                    String query = "INSERT IGNORE INTO FAMILY (FamilyCode, FamilyName) VALUES (?, ?)";
                     PreparedStatement pstmt = con.prepareStatement(query);
-                    pstmt.setInt(1, codigo);
+                    pstmt.setString(1, codigo);
                     pstmt.setString(2, nombre);
                     pstmt.executeUpdate();
                 } catch (SQLException e) {
@@ -48,7 +47,7 @@ public class InsertarFamilias {
                     System.out.println("Error en la operación de la base de datos");
                 }
             }
-
+            System.out.println("Datos de FAMILY subidos");
             // Cerrar la conexión a la base de datos
             con.close();
 

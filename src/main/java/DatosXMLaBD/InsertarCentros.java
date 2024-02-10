@@ -52,6 +52,7 @@ public class InsertarCentros {
                 ps.setString(4, correo);
                 ps.executeUpdate();
             }
+            System.out.println("Datos de ENTITY subidos");
         } catch (ParserConfigurationException | IOException | SAXException e) {
             System.err.println("Error: " + e.getMessage());
             throw new RuntimeException(e);
