@@ -3,8 +3,8 @@ package CSVtoXML;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.JAXBException;
 import jakarta.xml.bind.Marshaller;
-import objetos.Proyecto;
-import objetos.Proyectos;
+import objetosCSV.Proyecto;
+import objetosCSV.Proyectos;
 
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
