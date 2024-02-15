@@ -1,6 +1,11 @@
 package DatosXMLaBD;
 
 import conexiones.ConexionMySQL;
+import entities.ProjectEntity;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityTransaction;
+import jakarta.persistence.Persistence;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -16,13 +21,18 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Date;
+
 
 public class InsertarProyectos {
 
     public static void insertar() {
+        EntityManagerFactory emf = Persistence.createEntityManagerFactory("default");
+        EntityManager em = emf.createEntityManager();
+        EntityTransaction transaction = em.getTransaction();
+
         try {
-            // Crear la conexión a la base de datos MySQL
-            Connection con = ConexionMySQL.conectar("FP24MJO");
+            transaction.begin();
 
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
@@ -31,7 +41,6 @@ public class InsertarProyectos {
 
             NodeList nodeList = document.getElementsByTagName("Proyecto");
 
-            // Creación de los objetos de la entidad Proyecto
             for (int i = 0; i < nodeList.getLength(); i++) {
                 Element element = (Element) nodeList.item(i);
 
@@ -39,55 +48,51 @@ public class InsertarProyectos {
                 String fechaInicio = element.getElementsByTagName("fechaInicio").item(0).getTextContent();
                 String fechaFin = element.getElementsByTagName("fechaFin").item(0).getTextContent();
 
-                String estado = "Pendiente"; // Por defecto, el estado es Pendiente
+                String estado = "Pendiente";
 
-                // Verificar el estado según las fechas disponibles
                 if (!fechaInicio.isEmpty() && !fechaFin.isEmpty()) {
                     estado = "Completado";
                 } else if (!fechaInicio.isEmpty()) {
                     estado = "En Curso";
                 }
 
-                // Usar la conexión a la base de datos MySQL
+                ProjectEntity project = new ProjectEntity();
+                project.setTitle(titulo);
+                project.setState(estado);
+
+                SimpleDateFormat sdfInput = new SimpleDateFormat("dd/MM/yyyy");
+                SimpleDateFormat sdfOutput = new SimpleDateFormat("yyyy-MM-dd");
+
                 try {
-                    String query = "INSERT IGNORE INTO PROJECT (Title, State, InitDate, EndDate) VALUES (?, ?, ?, ?)";
-                    PreparedStatement pstmt = con.prepareStatement(query);
-                    pstmt.setString(1, titulo);
-                    pstmt.setString(2, estado);
-
-                    // Reformatear fecha de inicio
                     if (!fechaInicio.isEmpty()) {
-                        SimpleDateFormat sdfInput = new SimpleDateFormat("dd/MM/yyyy");
-                        SimpleDateFormat sdfOutput = new SimpleDateFormat("yyyy-MM-dd");
-                        java.util.Date parsedDate = sdfInput.parse(fechaInicio);
-                        pstmt.setString(3, sdfOutput.format(parsedDate));
-                    } else {
-                        pstmt.setNull(3, Types.DATE);
+                        Date parsedStartDate = sdfInput.parse(fechaInicio);
+                        project.setInitDate(java.sql.Date.valueOf(sdfOutput.format(parsedStartDate)));
                     }
 
-                    // Reformatear fecha de fin
                     if (!fechaFin.isEmpty()) {
-                        SimpleDateFormat sdfInput = new SimpleDateFormat("dd/MM/yyyy");
-                        SimpleDateFormat sdfOutput = new SimpleDateFormat("yyyy-MM-dd");
-                        java.util.Date parsedDate = sdfInput.parse(fechaFin);
-                        pstmt.setString(4, sdfOutput.format(parsedDate));
-                    } else {
-                        pstmt.setNull(4, Types.DATE);
+                        Date parsedEndDate = sdfInput.parse(fechaFin);
+                        project.setEndDate(java.sql.Date.valueOf(sdfOutput.format(parsedEndDate)));
                     }
-
-                    pstmt.executeUpdate();
-                } catch (SQLException | ParseException e) {
+                } catch (ParseException e) {
                     e.printStackTrace();
-                    System.out.println("Error en la operación de la base de datos");
                 }
-            }
-            System.out.println("Datos de PROJECT subidos");
-            // Cerrar la conexión a la base de datos
-            con.close();
 
-        } catch (ParserConfigurationException | IOException | org.xml.sax.SAXException | SQLException e) {
-            e.printStackTrace();
-            System.out.println("Error en la operación de la base de datos");
+                em.persist(project);
+            }
+
+            transaction.commit();
+            System.out.println("Datos de PROJECT subidos");
+
+        } catch (Exception e) {
+            if (transaction.isActive()) {
+                transaction.rollback();
+            }
+            System.err.println("Error: " + e.getMessage());
+            throw new RuntimeException(e);
+        } finally {
+            em.close();
+            emf.close();
         }
     }
 }
+

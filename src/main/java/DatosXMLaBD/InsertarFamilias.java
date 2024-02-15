@@ -1,6 +1,11 @@
 package DatosXMLaBD;
 
 import conexiones.ConexionMySQL;
+import entities.FamilyEntity;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
+import jakarta.persistence.EntityTransaction;
+import jakarta.persistence.Persistence;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -18,9 +23,12 @@ import java.sql.SQLException;
 public class InsertarFamilias {
 
     public static void insertar() {
+        EntityManagerFactory emf = Persistence.createEntityManagerFactory("yourPersistenceUnitName"); // Change to your persistence unit name
+        EntityManager em = emf.createEntityManager();
+        EntityTransaction transaction = em.getTransaction();
+
         try {
-            // Crear la conexión a la base de datos MySQL
-            Connection con = ConexionMySQL.conectar("FP24MJO");
+            transaction.begin();
 
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = factory.newDocumentBuilder();
@@ -29,31 +37,31 @@ public class InsertarFamilias {
 
             NodeList nodeList = document.getElementsByTagName("familia");
 
-            // Creación de los objetos de la entidad EntityEntity
             for (int i = 0; i < nodeList.getLength(); i++) {
                 Element element = (Element) nodeList.item(i);
 
                 String codigo = element.getElementsByTagName("codigo").item(0).getTextContent();
                 String nombre = element.getElementsByTagName("nombre").item(0).getTextContent();
 
-                try {
-                    String query = "INSERT IGNORE INTO FAMILY (FamilyCode, FamilyName) VALUES (?, ?)";
-                    PreparedStatement pstmt = con.prepareStatement(query);
-                    pstmt.setString(1, codigo);
-                    pstmt.setString(2, nombre);
-                    pstmt.executeUpdate();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    System.out.println("Error en la operación de la base de datos");
-                }
-            }
-            System.out.println("Datos de FAMILY subidos");
-            // Cerrar la conexión a la base de datos
-            con.close();
+                FamilyEntity family = new FamilyEntity();
+                family.setFamilyCode(codigo);
+                family.setFamilyName(nombre);
 
-        } catch (ParserConfigurationException | IOException | SAXException | SQLException e) {
-            e.printStackTrace();
-            System.out.println("Error en la operación de la base de datos");
+                em.persist(family);
+            }
+
+            transaction.commit();
+            System.out.println("Datos de FAMILY subidos");
+
+        } catch (Exception e) {
+            if (transaction.isActive()) {
+                transaction.rollback();
+            }
+            System.err.println("Error: " + e.getMessage());
+            throw new RuntimeException(e);
+        } finally {
+            em.close();
+            emf.close();
         }
     }
 }
